@@ -288,6 +288,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         # TODO: Here I have a loop for the epw builders for future extension of another epw bands interpolation
         for namespace in ["epw_base", "epw_bands"]:
             epw_inputs = inputs.get(namespace, None)
+            epw_inputs = {'metadata': epw_inputs}
             if namespace == "epw_base":
                 if "target_base" not in epw_inputs["metadata"]["options"]["stash"]:
                     epw_computer = codes["epw"].computer
@@ -325,7 +326,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         builder.kpoints_distance_scf = orm.Float(inputs["kpoints_distance_scf"])
         builder.kpoints_factor_nscf = orm.Int(inputs["kpoints_factor_nscf"])
         builder.clean_workdir = orm.Bool(inputs["clean_workdir"])
-
+        builder.w90_chk_to_ukk_script = kwargs.get('w90_chk_to_ukk_script', None)
         return builder
 
     def generate_reciprocal_points(self):
@@ -426,7 +427,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
     def run_epw(self):
         """Run the `EpwBaseWorkChain`."""
         inputs = AttributeDict(
-            self.exposed_inputs(EpwBaseWorkChain), namespace="epw_base"
+            self.exposed_inputs(EpwBaseWorkChain, namespace="epw_base")
         )
 
         # The EpwBaseWorkChain will take the parent folder of the previous

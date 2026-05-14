@@ -215,3 +215,5 @@ dev/
 .jupytext-sync-ipynb
 
 examples
+
+.lh*
