@@ -232,7 +232,7 @@ class EpwCalculation(CalcJob):
                 )
                 
             mmn_file = Path(parent_folder_chk.get_remote_path(), self._PREFIX + ".mmn")
-            out_mmn = '\n'.join(f"({','.join(l.split())})" for l in mmn_file.read_text().strip().split('\n')[3:])
+            out_mmn = '\n'.join(f"({','.join(l.split())})" for l in mmn_file.read_text().strip().split('\n')[3:] if len(l.strip().split()) == 2)
             mmn_file.write_text(out_mmn)
             
             remote_list.append(
