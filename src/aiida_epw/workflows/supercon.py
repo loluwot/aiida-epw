@@ -241,7 +241,6 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
 
         builder = cls.get_builder()
-
         if parent_epw.process_label == "EpwPrepWorkChain":
             epw_source = (
                 parent_epw.base.links.get_outgoing(link_label_filter="epw_base")
@@ -249,29 +248,31 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
                 .node
             )
         elif parent_epw.process_label == "EpwBaseWorkChain":
+            # from aiida.common.links import LinkType
+            # epw_prep = parent_epw.get_incoming(link_type=LinkType.CALL_WORK).all()[0]
             epw_source = parent_epw
         else:
             raise ValueError(f"Invalid parent_epw process: {parent_epw.process_label}")
 
         if parent_folder_epw is None:
             if (
-                epw_source.inputs.epw.code.computer.hostname
+                epw_source.inputs.code.computer.hostname
                 != epw_code.computer.hostname
             ):
                 raise ValueError(
                     "The `epw_code` must be configured on the same computer as that where the `parent_epw` was run."
                 )
-            parent_folder_epw = parent_epw.outputs.epw_folder
+            parent_folder_epw = epw_source.outputs.remote_folder
         else:
             # TODO: Add check to make sure parent_folder_epw is on same computer as epw_code
             pass
 
         for epw_namespace in ("epw_interp", "epw_final_iso", "epw_final_aniso"):
             epw_inputs = inputs.get(epw_namespace, None)
-
             epw_builder = EpwBaseWorkChain.get_builder_from_protocol(
                 code=epw_code,
-                structure=epw_source.inputs.structure,
+                # structure=epw_source.inputs.structure,
+                structure=parent_epw.inputs.structure,
                 protocol=protocol,
                 overrides=epw_inputs,
             )
@@ -331,7 +332,7 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
                     "allen_dynes"
                 ]
                 self.ctx.is_converged = (
-                    abs(prev_allen_dynes - new_allen_dynes)
+                    abs(prev_allen_dynes - new_allen_dynes) / new_allen_dynes
                     < self.inputs.convergence_threshold
                 )
                 self.report(
@@ -365,16 +366,24 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
         inputs = AttributeDict(
             self.exposed_inputs(EpwBaseWorkChain, namespace="epw_interp")
         )
-
+        
+        print('INPUTS', inputs)
+        
+        inputs.structure = self.inputs.structure
         inputs.parent_folder_epw = self.inputs.parent_folder_epw
         inputs.kfpoints_factor = self.inputs.epw_interp.kfpoints_factor
         inputs.qfpoints_distance = self.ctx.interpolation_list.pop()
 
+        parameters = inputs.parameters.get_dict()
+        
         if self.ctx.degaussq:
-            parameters = inputs.parameters.get_dict()
             parameters["INPUTEPW"]["degaussq"] = self.ctx.degaussq
-            inputs.parameters = orm.Dict(parameters)
+        
+        parameters['INPUTEPW']['a2f'] = True
+        parameters['INPUTEPW']['phonoselfen'] = True
+        print(parameters['INPUTEPW'])
 
+        inputs.parameters = orm.Dict(parameters)
         inputs.setdefault("metadata", {})["call_link_label"] = (
             f"conv_{self.ctx.iteration:02d}"
         )
@@ -423,6 +432,7 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
             self.exposed_inputs(EpwBaseWorkChain, namespace="epw_final_iso")
         )
 
+        inputs.structure = self.inputs.structure
         parent_folder_epw = self.ctx.epw_interp[-1].outputs.remote_folder
         inputs.parent_folder_epw = parent_folder_epw
         inputs.kfpoints = parent_folder_epw.creator.inputs.kfpoints
@@ -458,6 +468,7 @@ class SuperConWorkChain(ProtocolMixin, WorkChain):
             self.exposed_inputs(EpwBaseWorkChain, namespace="epw_final_aniso")
         )
 
+        inputs.structure = self.inputs.structure
         parent_folder_epw = self.ctx.epw_interp[-1].outputs.remote_folder
         inputs.parent_folder_epw = parent_folder_epw
         inputs.kfpoints = parent_folder_epw.creator.inputs.kfpoints

@@ -281,7 +281,6 @@ class EpwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 )
 
             parameters["INPUTEPW"]["nbndsub"] = w90_params["num_wann"]
-            parameters["INPUTEPW"]["elph"] = True
 
         if "parent_folder_epw" in self.inputs:
             epw_params = (

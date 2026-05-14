@@ -289,7 +289,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         # TODO: Here I have a loop for the epw builders for future extension of another epw bands interpolation
         for namespace in ["epw_base", "epw_bands"]:
             epw_inputs = inputs.get(namespace, None)
-            epw_inputs = {'metadata': epw_inputs}
+            # epw_inputs = {'metadata': epw_inputs}
             if namespace == "epw_base":
                 if "target_base" not in epw_inputs['metadata']["options"]["stash"]:
                     epw_computer = codes["epw"].computer
@@ -411,8 +411,8 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         
         inputs.qpoints = self.ctx.qpoints
         inputs.metadata.call_link_label = "ph_base"
-        workchain_node = self.submit(PhBaseWorkChain, **inputs)
-        # workchain_node = orm.load_node(2470)
+        # workchain_node = self.submit(PhBaseWorkChain, **inputs)
+        workchain_node = orm.load_node(2470)
         self.report(f"launching PhBaseWorkChain<{workchain_node.pk}>")
         return {'workchain_ph': workchain_node}
 
@@ -434,7 +434,13 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
 
         # The EpwBaseWorkChain will take the parent folder of the previous
         # PhCalculation, PwCalculation, and Wannier90Calculation.
-        inputs.parent_folder_ph = self.ctx.workchain_ph.outputs.remote_folder        
+        inputs.parent_folder_ph = self.ctx.workchain_ph.outputs.remote_folder
+        # print(self.ctx.workchain_ph.outputs.remote_folder)
+        
+        # remote = orm.RemoteData(remote_path='/home/aiida/.aiida/scratch/presto/80/c3/37fe-8a87-4363-a8bc-0206631079fd', computer=orm.load_computer('localhost'))
+        # remote.store()
+        # inputs.parent_folder_ph = remote
+
         w90_workchain = self.ctx.workchain_w90_bands
         inputs.parent_folder_nscf = w90_workchain.outputs.nscf.remote_folder
         if (
