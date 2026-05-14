@@ -256,8 +256,9 @@ class EpwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
             and "parent_folder_chk" in self.inputs
         ):
             prepend_text = metadata["options"].get("prepend_text", "")
-            prepend_text += f"\n{self.inputs.w90_chk_to_ukk_script.get_remote_path()} {EpwCalculation._PREFIX}.chk {EpwCalculation._OUTPUT_SUBFOLDER}{EpwCalculation._PREFIX}.xml {EpwCalculation._PREFIX}.ukk {EpwCalculation._PREFIX}.wannier90.mmn {EpwCalculation._PREFIX}.mmn"
-
+            # prepend_text += f"\n{self.inputs.w90_chk_to_ukk_script.get_remote_path()} {EpwCalculation._PREFIX}.chk {EpwCalculation._OUTPUT_SUBFOLDER}{EpwCalculation._PREFIX}.xml {EpwCalculation._PREFIX}.ukk {EpwCalculation._PREFIX}.wannier90.mmn {EpwCalculation._PREFIX}.mmn"
+            prepend_text += f"\n{self.inputs.w90_chk_to_ukk_script.get_remote_path()} {EpwCalculation._PREFIX}.chk {EpwCalculation._OUTPUT_SUBFOLDER}{EpwCalculation._PREFIX}.xml {EpwCalculation._PREFIX}.ukk"
+            
             metadata["options"]["prepend_text"] = prepend_text
 
         self.ctx.inputs.metadata = metadata
@@ -280,6 +281,7 @@ class EpwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 )
 
             parameters["INPUTEPW"]["nbndsub"] = w90_params["num_wann"]
+            parameters["INPUTEPW"]["elph"] = True
 
         if "parent_folder_epw" in self.inputs:
             epw_params = (
@@ -293,7 +295,6 @@ class EpwBaseWorkChain(ProtocolMixin, BaseRestartWorkChain):
                 parameters["INPUTEPW"]["bands_skipped"] = epw_params["INPUTEPW"].get(
                     "bands_skipped"
                 )
-
         self.ctx.inputs.parameters = orm.Dict(parameters)
 
     # We should validate the kpoints and qpoints on the fly

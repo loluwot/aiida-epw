@@ -230,15 +230,20 @@ class EpwCalculation(CalcJob):
                         self._PREFIX + "." + suffix,
                     )
                 )
+                
+            mmn_file = Path(parent_folder_chk.get_remote_path(), self._PREFIX + ".mmn")
+            out_mmn = '\n'.join(f"({','.join(l.split())})" for l in mmn_file.read_text().strip().split('\n')[3:])
+            mmn_file.write_text(out_mmn)
+            
             remote_list.append(
                 (
                     parent_folder_chk.computer.uuid,
-                    Path(
-                        parent_folder_chk.get_remote_path(), self._PREFIX + ".mmn"
-                    ).as_posix(),
-                    self._PREFIX + ".wannier90.mmn",
+                    mmn_file.as_posix(),
+                    self._PREFIX + ".mmn",
                 )
+                
             )
+            # print('REMOTE LIST', remote_list)
 
         if "parent_folder_ph" in self.inputs:
             parent_folder_ph = self.inputs.parent_folder_ph

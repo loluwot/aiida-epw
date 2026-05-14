@@ -4,6 +4,7 @@ from pathlib import Path
 
 from aiida import orm
 from aiida.common import AttributeDict
+from aiida.common import StashMode
 
 from aiida.engine import WorkChain, if_
 from aiida_quantumespresso.workflows.ph.base import PhBaseWorkChain
@@ -290,7 +291,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
             epw_inputs = inputs.get(namespace, None)
             epw_inputs = {'metadata': epw_inputs}
             if namespace == "epw_base":
-                if "target_base" not in epw_inputs["metadata"]["options"]["stash"]:
+                if "target_base" not in epw_inputs['metadata']["options"]["stash"]:
                     epw_computer = codes["epw"].computer
                     if epw_computer.transport_type == "core.local":
                         target_basepath = Path(
@@ -326,7 +327,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         builder.kpoints_distance_scf = orm.Float(inputs["kpoints_distance_scf"])
         builder.kpoints_factor_nscf = orm.Int(inputs["kpoints_factor_nscf"])
         builder.clean_workdir = orm.Bool(inputs["clean_workdir"])
-        builder.w90_chk_to_ukk_script = kwargs.get('w90_chk_to_ukk_script', None)
+
         return builder
 
     def generate_reciprocal_points(self):
@@ -375,7 +376,8 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
 
         set_kpoints(inputs, self.ctx.kpoints_nscf, w90_class)
         inputs["scf"]["kpoints"] = self.ctx.kpoints_scf
-
+        inputs.wannier90.wannier90.parameters['write_bvec'] = True
+        
         workchain_node = self.submit(w90_class, **inputs)
         self.report(f"launching {w90_class.get_name()}<{workchain_node.pk}>")
 
@@ -393,6 +395,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
 
     def run_ph(self):
         """Run the `PhBaseWorkChain`."""
+    
         inputs = AttributeDict(
             self.exposed_inputs(PhBaseWorkChain, namespace="ph_base")
         )
@@ -405,13 +408,12 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
             .node
         )
         inputs.ph.parent_folder = scf_base_wc.outputs.remote_folder
-
+        
         inputs.qpoints = self.ctx.qpoints
-
         inputs.metadata.call_link_label = "ph_base"
         workchain_node = self.submit(PhBaseWorkChain, **inputs)
+        # workchain_node = orm.load_node(2470)
         self.report(f"launching PhBaseWorkChain<{workchain_node.pk}>")
-
         return {'workchain_ph': workchain_node}
 
     def inspect_ph(self):
@@ -432,8 +434,7 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
 
         # The EpwBaseWorkChain will take the parent folder of the previous
         # PhCalculation, PwCalculation, and Wannier90Calculation.
-        inputs.parent_folder_ph = self.ctx.workchain_ph.outputs.remote_folder
-
+        inputs.parent_folder_ph = self.ctx.workchain_ph.outputs.remote_folder        
         w90_workchain = self.ctx.workchain_w90_bands
         inputs.parent_folder_nscf = w90_workchain.outputs.nscf.remote_folder
         if (
@@ -458,7 +459,8 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         inputs.qfpoints = fine_points
 
         inputs.metadata.call_link_label = "epw_base"
-
+        # print(inputs.metadata)
+        # inputs.metadata.options.stash.stash_mode = StashMode.COPY
         workchain_node = self.submit(EpwBaseWorkChain, **inputs)
         self.report(
             f"launching EpwBaseWorkChain<{workchain_node.pk}> in transformation mode"
