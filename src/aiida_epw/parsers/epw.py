@@ -87,9 +87,15 @@ class EpwParser(BaseParser):
 
         data_type_regex = (
             (
-                "allen_dynes",
+                "allen_dynes_tc",
                 float,
-                re.compile(r"\s+Estimated Allen-Dynes Tc =\s+([\d\.]+) K"),
+                # re.compile(r"\s+Estimated Allen-Dynes Tc =\s+([\d\.]+) K"),
+                re.compile(r"\s+Estimated Tc using Allen-Dynes modified McMillan expression\s+=\s+([\d\.]+) K")
+            ),
+            (
+                "ml_tc",
+                float,
+                re.compile(r"\s+Estimated Tc using SISSO machine learning model\s+=\s+([\d\.]+) K")
             ),
             (
                 "fermi_energy_coarse",

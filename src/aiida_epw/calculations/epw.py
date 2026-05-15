@@ -48,7 +48,7 @@ class EpwCalculation(CalcJob):
     _output_phbands_file = "phband.freq"
     _FOLDER_SAVE = "save"
     _FOLDER_DYNAMICAL_MATRIX = "DYN_MAT"
-    _MAX_NSTEMP = 300
+    _MAX_NSTEMP = 50
 
     # Not using symlink in pw to allow multiple nscf to run on top of the same scf
     _default_symlink_usage = False
@@ -320,7 +320,8 @@ class EpwCalculation(CalcJob):
                 "selecq.fmt",
                 "crystal.fmt",
                 "epwdata.fmt",
-                vme_fmt_dict[parameters["INPUTEPW"]["vme"]],
+                "dmedata.fmt",
+                "vmedata.fmt",
                 f"{self._PREFIX}.kgmap",
                 f"{self._PREFIX}.kmap",
                 f"{self._PREFIX}.ukk",
@@ -428,6 +429,9 @@ class EpwCalculation(CalcJob):
 
         if parameters["INPUTEPW"].get("laniso", False):
             retrieve_list.append("aiida.imag_aniso_gap*")
+            
+        if parameters["INPUTEPW"].get("eliashberg", False):
+            retrieve_list.append("aiida.a2f")
 
         # customized namelists, otherwise not present in the distributed epw code
         try:

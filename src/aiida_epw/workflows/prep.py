@@ -411,8 +411,8 @@ class EpwPrepWorkChain(ProtocolMixin, WorkChain):
         
         inputs.qpoints = self.ctx.qpoints
         inputs.metadata.call_link_label = "ph_base"
-        # workchain_node = self.submit(PhBaseWorkChain, **inputs)
-        workchain_node = orm.load_node(2470)
+        workchain_node = self.submit(PhBaseWorkChain, **inputs)
+        # workchain_node = orm.load_node(2470)
         self.report(f"launching PhBaseWorkChain<{workchain_node.pk}>")
         return {'workchain_ph': workchain_node}
 
